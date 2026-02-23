@@ -1,6 +1,6 @@
 import streamlit as st
 
-# 1. Page Configuration
+# 1. Page Configuration / 页面配置
 st.set_page_config(
     page_title="Kelly Criterion Planner",
     page_icon="🎯",
@@ -8,7 +8,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS for iPad/Retina Look
+# 2. Custom CSS for Premium Look / 自定义 CSS 提升视觉效果
 st.markdown("""
     <style>
     /* Main background */
@@ -57,9 +57,9 @@ st.markdown("""
         margin-top: 0.25rem;
     }
     </style>
-    """, unsafe_allow_value=True)
+    """, unsafe_allow_html=True)
 
-# 3. Sidebar Inputs
+# 3. Sidebar Inputs / 侧边栏输入
 with st.sidebar:
     st.title("🎯 Parameters / 参数")
     st.markdown("---")
@@ -82,74 +82,77 @@ with st.sidebar:
         format_func=lambda x: "Full (1.0)" if x==1 else ("Half (0.5)" if x==0.5 else "Quarter (0.25)")
     )
 
-# 4. Logic Calculations
+# 4. Logic Calculations / 逻辑计算
 p = win_rate / 100.0
 q = 1.0 - p
 gain_per_share = target - entry
 loss_per_share = entry - stop
 
+# Validation
 if gain_per_share <= 0 or loss_per_share <= 0:
     st.error("❌ Invalid Price Configuration: Target > Entry > Stop-Loss required.")
-else:
-    b = gain_per_share / loss_per_share
-    raw_f = (p * b - q) / b
-    kelly_f = max(0, raw_f)
-    adjusted_f = kelly_f * risk_mode
-    
-    investment = funds * adjusted_f
-    shares = int(investment / entry)
-    total_profit = shares * gain_per_share
-    total_loss = shares * loss_per_share
+    st.stop()
 
-    # 5. Main Content Rendering
-    st.title("Kelly Criterion Planner")
-    st.markdown(f"**Strategy:** {risk_mode} Kelly | **Reward/Risk (b):** {b:.3f}")
+# Kelly Formula
+b = gain_per_share / loss_per_share
+raw_f = (p * b - q) / b
+kelly_f = max(0, raw_f)
+adjusted_f = kelly_f * risk_mode
 
-    # Hero Section
-    st.markdown(f"""
-        <div class="hero-card">
-            <div class="hero-title">Suggested Investment / 建议投入金额</div>
-            <div class="hero-value">${investment:,.2f}</div>
-            <div style="display: flex; gap: 20px; margin-top: 10px;">
-                <div>
-                    <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 700; text-transform: uppercase;">Allocation</div>
-                    <div style="font-size: 1.5rem; font-weight: 700;">{adjusted_f*100:.2f}%</div>
-                </div>
-                <div>
-                    <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 700; text-transform: uppercase;">Shares</div>
-                    <div style="font-size: 1.5rem; font-weight: 700;">{shares:,}</div>
-                </div>
+investment = funds * adjusted_f
+shares = int(investment / entry) if entry > 0 else 0
+total_profit = shares * gain_per_share
+total_loss = shares * loss_per_share
+
+# 5. Main Content Rendering / 主内容渲染
+st.title("Kelly Criterion Planner")
+st.markdown(f"**Strategy:** {risk_mode} Kelly | **Reward/Risk (b):** {b:.3f}")
+
+# Hero Section (Suggested Buy)
+st.markdown(f"""
+    <div class="hero-card">
+        <div class="hero-title">Suggested Investment / 建议投入金额</div>
+        <div class="hero-value">${investment:,.2f}</div>
+        <div style="display: flex; gap: 40px; margin-top: 10px;">
+            <div>
+                <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 700; text-transform: uppercase;">Allocation</div>
+                <div style="font-size: 1.5rem; font-weight: 700;">{adjusted_f*100:.2f}%</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 700; text-transform: uppercase;">Shares</div>
+                <div style="font-size: 1.5rem; font-weight: 700;">{shares:,}</div>
             </div>
         </div>
-    """, unsafe_allow_value=True)
+    </div>
+""", unsafe_allow_html=True)
 
-    # P&L Projection Columns
-    col1, col2 = st.columns(2)
+# P&L Projection Columns
+col1, col2 = st.columns(2)
 
-    with col1:
-        st.markdown(f"""
-            <div class="metric-card">
-                <div style="color: #10B981; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Potential Profit / 潜在利润</div>
-                <div style="font-size: 2rem; font-weight: 900; color: #1E293B; margin: 0.5rem 0;">${total_profit:,.2f}</div>
-                <div style="color: #10B981; font-size: 0.875rem; font-weight: 600;">+{gain_per_share:.3f} per share</div>
-            </div>
-        """, unsafe_allow_value=True)
+with col1:
+    st.markdown(f"""
+        <div class="metric-card">
+            <div style="color: #10B981; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Potential Profit / 潜在利润</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #1E293B; margin: 0.5rem 0;">${total_profit:,.2f}</div>
+            <div style="color: #10B981; font-size: 0.875rem; font-weight: 600;">+{gain_per_share:.3f} per share</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    with col2:
-        st.markdown(f"""
-            <div class="metric-card">
-                <div style="color: #EF4444; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Potential Loss / 潜在亏损</div>
-                <div style="font-size: 2rem; font-weight: 900; color: #1E293B; margin: 0.5rem 0;">${total_loss:,.2f}</div>
-                <div style="color: #EF4444; font-size: 0.875rem; font-weight: 600;">-{loss_per_share:.3f} per share</div>
-            </div>
-        """, unsafe_allow_value=True)
+with col2:
+    st.markdown(f"""
+        <div class="metric-card">
+            <div style="color: #EF4444; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Potential Loss / 潜在亏损</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #1E293B; margin: 0.5rem 0;">${total_loss:,.2f}</div>
+            <div style="color: #EF4444; font-size: 0.875rem; font-weight: 600;">-{loss_per_share:.3f} per share</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # Footer Info
-    if raw_f <= 0:
-        st.warning("⚠️ **Negative Edge:** The math suggests skipping this trade. / 数学优势为负，建议放弃交易。")
-    else:
-        st.info(f"""
-        **Pro Tip:** While the Kelly Criterion suggests **{adjusted_f*100:.2f}%**, most professional portfolio managers cap single trades at 10-20% to manage volatility.
-        
-        **专业提示：** 虽然凯利公式建议投入 **{adjusted_f*100:.2f}%**，但大多数专业基金经理会将单笔交易限制在 10-20% 以控制波动。
-        """)
+# Footer Info / 底部提示
+if raw_f <= 0:
+    st.warning("⚠️ **Negative Expected Value:** The math suggests skipping this trade. / 数学优势为负，建议放弃交易。")
+else:
+    st.info(f"""
+    **Pro Tip:** While the Kelly Criterion suggests **{adjusted_f*100:.2f}%**, most professional portfolio managers cap single trades at 10-20% to manage volatility.
+    
+    **专业提示：** 虽然凯利公式建议投入 **{adjusted_f*100:.2f}%**，但大多数专业基金经理会将单笔交易限制在 10-20% 以控制波动。
+    """)
